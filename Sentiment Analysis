@@ -1,0 +1,58 @@
+mport string
+import numpy as np
+from nltk.corpus import stopwords
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+from sklearn import preprocessing
+
+# creates a variable for the input text
+text = open("text.txt").read()
+
+# converting to lowercase
+lower_case = text.lower()
+
+# Removing punctuations
+cleaned_text = lower_case.translate(str.maketrans('', '', string.punctuation))
+
+# splitting text into list of words
+tokenized_words = word_tokenize(cleaned_text)
+
+# remove stop words from word list
+stop_words = stopwords.words('english')
+final_words = [word for word in tokenized_words if not word in stop_words]
+
+# Lemmatization - changes word to base form
+lemma_words = []
+for word in final_words:
+    word = WordNetLemmatizer().lemmatize(word)
+    lemma_words.append(word)
+
+# Creates two lists: one with scored words and one with numerical scores
+vader_list = []
+score_list = []
+with open('vader_lexicon.txt', 'r') as file:
+    for line in file:
+        clear_line = line.split()
+        vader = clear_line[0]
+        score = clear_line[1]
+
+        if vader in lemma_words:
+            vader_list.append(vader)
+            score_list.append(score)
+
+# data normalizer
+
+# nltk sentiment analyzer
+nltk_score = SentimentIntensityAnalyzer().polarity_scores(text)
+print("NLTK score is = " + str(nltk_score))
+
+# normalize scores list to fit 1 < x > -1
+score_array = np.array(score_list)
+score_arr2D = np.reshape(score_array, (31, 2))
+min_max_scalar = preprocessing.MinMaxScaler(feature_range=(-1.0, 1.0))
+final_score_list = min_max_scalar.fit_transform(score_arr2D)
+
+# print flat average of scores
+my_final_score = round(np.mean(final_score_list), 4)
+print("My sentiment score is " + str(my_final_score))
